@@ -29,15 +29,17 @@ class RidgeRegressor(nn.Module):
 
         if n_samples >= n_dim:
             # standard
-            A = torch.bmm(X.mT, X)
+            A = torch.bmm(X.transpose(-2, -1), X)
             A.diagonal(dim1=-2, dim2=-1).add_(reg_coeff)
-            B = torch.bmm(X.mT, Y)
+            B = torch.bmm(X.transpose(-2, -1), Y)
             weights = torch.linalg.solve(A, B)
         else:
             # Woodbury
-            A = torch.bmm(X, X.mT)
+            # A = torch.bmm(X, X.mT)
+            A = torch.bmm(X, X.transpose(-2, -1))
             A.diagonal(dim1=-2, dim2=-1).add_(reg_coeff)
-            weights = torch.bmm(X.mT, torch.linalg.solve(A, Y))
+            # weights = torch.bmm(X.mT, torch.linalg.solve(A, Y))
+            weights = torch.bmm(X.transpose(-2, -1), torch.linalg.solve(A, Y))
 
         return weights[:, :-1], weights[:, -1:]
 
