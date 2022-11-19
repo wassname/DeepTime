@@ -1,3 +1,10 @@
+Fork note:
+
+Interested by the results on the Exchange data I'm digging deeper, plotting, extending, and replicating the exchange reults. See `scratch.ipynb`
+
+
+----
+
 # DeepTime: Deep Time-Index Meta-Learning for Non-Stationary Time-Series Forecasting
 
 <p align="center">
