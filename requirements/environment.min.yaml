@@ -1,0 +1,13 @@
+name: deeptime
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.8
+  - ipykernel
+  - pip
+  - ipywidgets
+  - ca-certificates
+  - openssl
+  - conda-lock
+prefix: /home/wassname/miniforge3/envs/deeptime

@@ -1,6 +1,6 @@
 Fork note:
 
-Interested by the results on the Exchange data I'm digging deeper, plotting, extending, and replicating the exchange reults. See `scratch.ipynb`
+Interested by the results on the Exchange data I'm digging deeper, plotting, extending, and replicating the exchange reults. See `scratch.ipynb` for plots. See mjc_notes for my notes.
 
 
 ----
