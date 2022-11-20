@@ -1,0 +1,37 @@
+build.experiment_name = 'Stocks/96Splusshort'
+build.module = 'experiments.forecast'
+build.repeat = 1
+build.variables_dict = {
+}
+
+instance.model_type = 'deeptime2'
+instance.save_vals = False
+
+get_optimizer.lr = 1e-3
+get_optimizer.lambda_lr = 1.
+get_optimizer.weight_decay = 0.
+
+get_scheduler.warmup_epochs = 5
+
+get_data.batch_size = 256
+
+train.loss_name = 'mse'
+train.epochs = 50
+train.clip = 10.
+
+Checkpoint.patience = 7
+
+deeptime2.layer_size = 256
+deeptime2.inr_layers = 5
+deeptime2.n_fourier_feats = 4096
+deeptime2.scales = [0.01, 0.1, 1, 5, 10, 20, 50, 100]
+
+ForecastDataset.data_path = 'stocks/OXY_2019.csv.gz'
+ForecastDataset.target = 'RSMKs_18_144_72'
+ForecastDataset.scale = True
+ForecastDataset.cross_learn = False
+ForecastDataset.time_features = []
+ForecastDataset.normalise_time_features = True
+ForecastDataset.features = 'S'
+ForecastDataset.horizon_len = 6
+ForecastDataset.lookback_mult = 8

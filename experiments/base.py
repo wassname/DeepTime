@@ -62,9 +62,12 @@ class Experiment(ABC):
             # write command file
             command_file = os.path.join(instance_path, 'command')
             with open(command_file, 'w') as cmd:
+                # cmd.write(f'python -m {module} '
+                #           f'--config_path={instance_config_path} '
+                #           f'run >> {instance_path}/instance.log 2>&1')
                 cmd.write(f'python -m {module} '
-                          f'--config_path={instance_config_path} '
-                          f'run >> {instance_path}/instance.log 2>&1')
+                                        f'--config_path={instance_config_path} '
+                                        f'run 2>&1 | tee -a {instance_path}/instance.log')
 
     @abstractmethod
     def instance(self):

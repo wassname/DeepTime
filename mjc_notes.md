@@ -1,4 +1,5 @@
 # install environment
+
 ```sh
 # try with pip torch WORKS!
 export PROJ=deeptime
@@ -13,11 +14,12 @@ pip install tsai
 
 # note that I've also recorded the env in requirements
 
-python -m experiments.forecast --config_path=storage/experiments/Exchange/192S/repeat=0/config.gin run >> storage/experiments/Exchange/192S/repeat=0/instance.log 2>&1%
+python -m experiments.forecast --config_path=storage/experiments/Exchange/192S/repeat=0/config.gin run | tee -a storage/experiments/Exchange/192S/repeat=0/instance.log 2>&1%
 ```
+
 # run
 
-```
+```sh
 python -m experiments.forecast --config_path=storage/experiments/Exchange/96S/repeat=0/config.gin run
 
 python -m experiments.forecast --config_path=storage/experiments/Exchange/96Splus/repeat=0/config.gin run
@@ -31,3 +33,16 @@ python -m experiments.forecast --config_path=storage/experiments/Exchange/96Ssho
 # Lessons
 
 Single variate works much better. The output is not just a straight line. Likely because we have limited the output, not the input
+
+# stocks
+
+```sh
+python -m experiments.forecast --config_path=experiments/configs/Stocks/96S.gin build_experiment 
+python -m experiments.forecast --config_path=storage/experiments/Stocks/96S/repeat=0/config.gin run
+```
+
+
+```
+make build-all path=experiments/configs/Stocks
+./run.sh
+```
