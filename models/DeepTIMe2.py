@@ -21,10 +21,13 @@ def deeptime2(datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_f
 
 
 class DeepTIMe2(nn.Module):
-    def __init__(self, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float):
+    def __init__(self, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float=0.3):
         super().__init__()
-        self.inr = INRPlus2(in_feats=datetime_feats + 1, layers=inr_layers, layer_size=layer_size,
-                       n_fourier_feats=n_fourier_feats, scales=scales)
+        in_feats=datetime_feats
+        if n_fourier_feats:
+            in_feats += 1
+        self.inr = INRPlus2(in_feats=in_feats, layers=inr_layers, layer_size=layer_size,
+                       n_fourier_feats=n_fourier_feats, scales=scales, dropout=dropout)
         self.adaptive_weights = RidgeRegressor()
 
         self.datetime_feats = datetime_feats

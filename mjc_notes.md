@@ -15,3 +15,19 @@ pip install tsai
 
 python -m experiments.forecast --config_path=storage/experiments/Exchange/192S/repeat=0/config.gin run >> storage/experiments/Exchange/192S/repeat=0/instance.log 2>&1%
 ```
+# run
+
+```
+python -m experiments.forecast --config_path=storage/experiments/Exchange/96S/repeat=0/config.gin run
+
+python -m experiments.forecast --config_path=storage/experiments/Exchange/96Splus/repeat=0/config.gin run
+
+python -m experiments.forecast --config_path=storage/experiments/Exchange/96Splusshort/repeat=0/config.gin run
+
+python -m experiments.forecast --config_path=storage/experiments/Exchange/96Sshort/repeat=0/config.gin run
+```
+
+
+# Lessons
+
+Single variate works much better. The output is not just a straight line. Likely because we have limited the output, not the input
