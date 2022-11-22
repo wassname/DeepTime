@@ -46,3 +46,20 @@ python -m experiments.forecast --config_path=storage/experiments/Stocks/96S/repe
 make build-all path=experiments/configs/Stocks
 ./run.sh
 ```
+
+# So how does deeptime work?
+
+original:
+- inr(coords)
+- RR
+
+My mods (I added past other variables):
+- inr(concat([x, coords]))
+- RR
+
+Where INR is one of [mlp, lstm, lstm2, transformer, transforme2, inceptioncausal]
+
+TODO:
+- M2S mode
+- add other INR's
+- add None as learner

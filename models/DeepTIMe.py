@@ -36,18 +36,23 @@ class DeepTIMe(nn.Module):
     def forward(self, x: Tensor, x_time: Tensor, y_time: Tensor) -> Tensor:
         tgt_horizon_len = y_time.shape[1]
         batch_size, lookback_len, _ = x.shape
+
+        # relative coordinates are the same for each batch, so we make them once and repeat them        
         coords = self.get_coords(lookback_len, tgt_horizon_len).to(x.device)
 
-        if y_time.shape[-1] != 0:
+        if y_time.shape[-1] != 0: # if y_time is not empty of features
             time = torch.cat([x_time, y_time], dim=1)
             coords = repeat(coords, '1 t 1 -> b t 1', b=time.shape[0])
             coords = torch.cat([coords, time], dim=-1)
             time_reprs = self.inr(coords)
         else:
-            time_reprs = repeat(self.inr(coords), '1 t d -> b t d', b=batch_size)
+            a = self.inr(coords)
+            time_reprs = repeat(a, '1 t d -> b t d', b=batch_size)
+            print(coords.shape, a.shape, batch_size, time_reprs.shape)
 
         lookback_reprs = time_reprs[:, :-tgt_horizon_len]
         horizon_reprs = time_reprs[:, -tgt_horizon_len:]
+        
         w, b = self.adaptive_weights(lookback_reprs, x)
         preds = self.forecast(horizon_reprs, w, b)
         return preds
