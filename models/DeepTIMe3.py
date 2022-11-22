@@ -32,6 +32,7 @@ class DeepTIMe3(nn.Module):
             # nf=32, depth=6,
             nf=17, depth=3,            
             bn=True,
+            dilation=6,
             ks=[39, 19, 3],
             coord=True, fc_dropout=dropout,
         )
@@ -57,17 +58,18 @@ class DeepTIMe3(nn.Module):
         representation = decode(h_past, coords)
         i = length of past, so we can offset the coords
         """
+        
+        # we summarize the past into a single hidden layer. Then repeat it for each coordinate
+        past_len = time.shape[1]
         encoded_x = self.encoder(past_x.transpose(2, 1))
+        encoded_x = repeat(encoded_x, "b f -> b t f", t=past_len)
 
         # relative coordinates are the same for each batch, so we make them once and repeat them   
-        past_len = time.shape[1]
-        encoded_x = repeat(encoded_x, "b f -> b t f", t=past_len)
         coords = self.get_coords(past_len).to(time.device) + offset
         coords = repeat(coords, "1 t 1 -> b t 1", b=time.shape[0])
         
-        
+        # combine and run INR to decode the representation
         context_input = torch.cat([encoded_x, coords, time], dim=-1)
-
         context_repr = self.inr(context_input)
         return context_repr
 
