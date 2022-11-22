@@ -24,13 +24,14 @@ class INRPlus2(nn.Module):
     def __init__(self, in_feats: int, layers: int, layer_size: int, n_fourier_feats: int, scales: float,
                  dropout: Optional[float] = 0.5, bn=False, *args, **kwargs):
         super().__init__()
-        self.features = nn.Linear(in_feats, layer_size) if n_fourier_feats == 0 \
+        self.n_fourier_feats = n_fourier_feats
+        self.features = nn.Linear(in_feats, in_feats) if n_fourier_feats == 0 \
             else GaussianFourierFeatureTransform(in_feats, n_fourier_feats, scales)
-        in_size = layer_size if n_fourier_feats == 0 \
+        
+        in_size = in_feats if n_fourier_feats == 0 \
             else n_fourier_feats+in_feats
-        # import pdb; pdb.set_trace()
         self.layers = CausalInceptionTimePlus(
-            in_size-1, layer_size, seq_len=None, nf=layer_size, depth=layers,
+            in_size, layer_size, seq_len=None, nf=layer_size, depth=layers,
                  flatten=False, concat_pool=False, fc_dropout=dropout, conv_dropout=0.05, bn=bn, y_range=None, custom_head=custom_head, ks=[139, 19, 3], dilation=2, *args, **kwargs
         )
         # layers = [INRPlusLayer(in_size, layer_size, dropout=dropout)] + \
@@ -38,6 +39,7 @@ class INRPlus2(nn.Module):
         # self.layers = nn.Sequential(*layers)
 
     def forward(self, x: Tensor) -> Tensor:
-        x = self.features(x)
-        # import pdb; pdb.set_trace()
-        return self.layers(x.permute((0, 2, 1))).permute((0, 2, 1))
+        f = self.features(x)
+        if self.n_fourier_feats>0:
+            f = torch.concat([f, x], -1)
+        return self.layers(f.permute((0, 2, 1))).permute((0, 2, 1))

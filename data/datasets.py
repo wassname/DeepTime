@@ -43,14 +43,15 @@ class ForecastDataset(Dataset):
         """
         assert flag in ('train', 'val', 'test'), \
             f"flag should be one of (train, val, test)"
-        assert features in ('M', 'S'), \
-            f"features should be one of (M: multivar, S: univar)"
+        assert features in ('M', 'S', 'M2S'), \
+            f"features should be one of (M: multivar, S: univar, M2S: multi inputs 2 single output)"
         assert (lookback_len is not None) ^ (lookback_mult is not None), \
             f"only 'lookback_len' xor 'lookback_mult' should be specified"
 
         self.flag = flag
         self.lookback_len = int(horizon_len * lookback_mult) if lookback_mult is not None else lookback_len
         self.lookback_aux_len = lookback_aux_len
+        self.gap = 0
         self.horizon_len = horizon_len
         self.scale = scale
         self.cross_learn = cross_learn
@@ -84,8 +85,11 @@ class ForecastDataset(Dataset):
         elif self.features == 'S':
             df_data = df_raw[[self.target]]
             self.n_dims = 1
+        elif self.features == 'M2S':
+            df_data = df_raw[cols + [self.target]]
+            self.n_dims = 1 # len(cols + [self.target])
         else:
-            raise ValueError
+            raise NotImplementedError(self.features)
 
         self.scaler = StandardScaler()
         if self.scale:
@@ -95,13 +99,15 @@ class ForecastDataset(Dataset):
         else:
             data = df_data.values
 
-        self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
+        # is will be our past data, including the y col
+        self.data_x = data[border1:border2] 
+        # y is just the col we predict
+        self.data_y = data[border1:border2][:, [-1]]
         self.timestamps = get_time_features(pd.to_datetime(df_raw.date[border1:border2].values),
                                             normalise=self.normalise_time_features,
                                             features=self.time_features)
         self.n_time = len(self.data_x)
-        self.n_time_samples = self.n_time - self.lookback_len - self.horizon_len + 1
+        self.n_time_samples = self.n_time - self.lookback_len * 2 - self.horizon_len + 1 + self.gap
 
     def get_borders(self, df_raw: pd.DataFrame) -> Tuple[List[int], List[int], List[int], List[int]]:
         set_type = {'train': 0, 'val': 1, 'test': 2}[self.flag]
@@ -133,18 +139,26 @@ class ForecastDataset(Dataset):
             idx = idx % self.n_time_samples
         else:
             dim_slice = slice(None)
+            
+        cx_start = idx
+        cx_end = cx_start + self.lookback_len
+        c_start = cx_end + self.gap
+        c_end = c_start + self.horizon_len
+        
+        qx_start = cx_end + self.gap
+        qx_end = qx_start + self.lookback_len
+        q_start = qx_end + self.gap
+        q_end = q_start + self.horizon_len
 
-        x_start = idx
-        x_end = x_start + self.lookback_len
-        y_start = x_end - self.lookback_aux_len
-        y_end = y_start + self.lookback_aux_len + self.horizon_len
-
-        x = self.data_x[x_start:x_end, dim_slice]
-        y = self.data_y[y_start:y_end, dim_slice]
-        x_time = self.timestamps[x_start:x_end]
-        y_time = self.timestamps[y_start:y_end]
-
-        return x, y, x_time, y_time
+        context_past_x = self.data_x[cx_start:cx_end, dim_slice]
+        context_y = self.data_y[c_start:c_end, dim_slice]
+        context_time = self.timestamps[c_start:c_end]
+        
+        query_past_x = self.data_x[qx_start:qx_end, dim_slice]
+        query_y = self.data_y[q_start:q_end, dim_slice]
+        query_time = self.timestamps[q_start:q_end]
+        
+        return context_past_x, context_y, query_past_x, query_y, context_time, query_time
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)

@@ -139,16 +139,16 @@ def train(model: nn.Module,
         model.train()
         for it, data in enumerate(train_loader):
             optimizer.zero_grad()
-
-            x, y, x_time, y_time = map(to_tensor, data)
-            forecast = model(x, x_time, y_time)
+            data2 = list(map(to_tensor, data))
+            context_past_x, context_y, query_past_x, query_y, context_time, query_time = data2
+            forecast = model(*data2)
 
             if isinstance(forecast, tuple):
                 # for models which require reconstruction + forecast loss
-                loss = training_loss_fn(forecast[0], x) + \
-                       training_loss_fn(forecast[1], y)
+                loss = training_loss_fn(forecast[0], context_y) + \
+                       training_loss_fn(forecast[1], query_y)
             else:
-                loss = training_loss_fn(forecast, y)
+                loss = training_loss_fn(forecast, query_y)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
@@ -188,22 +188,23 @@ def validate(model: nn.Module,
     inps = []
     total_loss = []
     for it, data in enumerate(loader):
-        x, y, x_time, y_time = map(to_tensor, data)
+        data2 = list(map(to_tensor, data))
+        context_past_x, context_y, query_past_x, query_y, context_time, query_time  = data2
 
-        if x.shape[0] == 1:
+        if context_past_x.shape[0] == 1:
             # skip final batch if batch_size == 1
             # due to bug in torch.linalg.solve which raises error when batch_size == 1
             continue
 
-        forecast = model(x, x_time, y_time)
+        forecast = model(*data2)
 
         if report_metrics:
             preds.append(forecast)
-            trues.append(y)
+            trues.append(query_y)
             if save_path is not None:
-                inps.append(x)
+                inps.append(context_y)
         else:
-            loss = loss_fn(forecast, y, reduction='none')
+            loss = loss_fn(forecast, query_y, reduction='none')
             total_loss.append(loss)
 
     if report_metrics:
