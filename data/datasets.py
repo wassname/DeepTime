@@ -131,6 +131,20 @@ class ForecastDataset(Dataset):
         if self.cross_learn:
             return self.n_time_samples * self.n_dims
         return self.n_time_samples
+    
+    def get_inds(self, idx):
+        cx_start = idx
+        cx_end = cx_start + self.lookback_len
+        c_start = cx_end + self.gap
+        c_end = c_start + self.horizon_len
+        
+        q_start = c_end + self.gap
+        q_end = q_start + self.horizon_len
+        
+        qx_end = q_start
+        qx_start = qx_end - self.lookback_len
+        
+        return cx_start, cx_end, c_start, c_end, qx_start, qx_end, q_start, q_end
 
     def __getitem__(self, idx: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         if self.cross_learn:
@@ -139,16 +153,8 @@ class ForecastDataset(Dataset):
             idx = idx % self.n_time_samples
         else:
             dim_slice = slice(None)
-            
-        cx_start = idx
-        cx_end = cx_start + self.lookback_len
-        c_start = cx_end + self.gap
-        c_end = c_start + self.horizon_len
         
-        qx_start = cx_end + self.gap
-        qx_end = qx_start + self.lookback_len
-        q_start = qx_end + self.gap
-        q_end = q_start + self.horizon_len
+        cx_start, cx_end, c_start, c_end, qx_start, qx_end, q_start, q_end = self.get_inds(idx)
 
         context_past_x = self.data_x[cx_start:cx_end, dim_slice]
         context_y = self.data_y[c_start:c_end, dim_slice]

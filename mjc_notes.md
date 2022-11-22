@@ -60,6 +60,20 @@ My mods (I added past other variables):
 Where INR is one of [mlp, lstm, lstm2, transformer, transforme2, inceptioncausal]
 
 TODO:
-- M2S mode
-- add other INR's
-- add None as learner
+
+- [x] try just one predictor
+- [x] compare multi
+- losses:
+    - try logp? nah
+    - mae?
+- [x] make my own csv with 5m data (maybe 10k rows)
+- [ ] backtest?
+
+- [x] M2S mode
+- [ ] add other INR's
+- [ ] add None as learner
+
+```
+python -m experiments.forecast --config_path=experiments/configs/hp_search/Stocks.gin build_experiment
+./run.sh
+```

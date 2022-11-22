@@ -9,6 +9,7 @@ import torch
 from torch import Tensor
 from torch import nn
 import torch.nn.functional as F
+from einops import rearrange, repeat, reduce
 
 
 class RidgeRegressor(nn.Module):
@@ -16,11 +17,15 @@ class RidgeRegressor(nn.Module):
         super().__init__()
         self._lambda = nn.Parameter(torch.as_tensor(lambda_init, dtype=torch.float))
 
-    def forward(self, reprs: Tensor, x: Tensor, reg_coeff: Optional[float] = None) -> Tensor:
+    def forward(self, query_reprs:Tensor, context_reprs: Tensor, context_y: Tensor, reg_coeff: Optional[float] = None) -> Tensor:
         if reg_coeff is None:
             reg_coeff = self.reg_coeff()
-        w, b = self.get_weights(reprs, x, reg_coeff)
-        return w, b
+        w, b = self.get_weights(context_reprs, context_y, reg_coeff)
+        preds = self.forecast(query_reprs, w, b)
+        return preds
+    
+    def forecast(self, inp: Tensor, w: Tensor, b: Tensor) -> Tensor:
+        return torch.einsum('... d o, ... t d -> ... t o', [w, inp]) + b
 
     def get_weights(self, X: Tensor, Y: Tensor, reg_coeff: float) -> Tensor:
         batch_size, n_samples, n_dim = X.shape

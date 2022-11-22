@@ -2,6 +2,13 @@ build.experiment_name = 'Stocks/96M2S'
 build.module = 'experiments.forecast'
 build.repeat = 1
 build.variables_dict = {
+    # 'ForecastDataset.lookback_mult': [1, 3, 5, 7, 9],
+    # 'ForecastDataset.horizon_len': [6, 12, 24, 48, 96, 192, 336, 720],
+    # 'ForecastDataset.features': ['m', 'h', 'd'],
+    'deeptime3.base_learner': ['Ridge', 'None', 'Transformer'],
+    'deeptime3.inr': ['INR', 'INRPlus2'],
+    'deeptime3.encoder': ['inception', ],
+    # 'deeptime3.dropout': [0.0, 0.1, 0.3, 0.5,],
 }
 
 instance.model_type = 'deeptime3'
@@ -32,7 +39,8 @@ ForecastDataset.data_path = 'stocks/OXY_2019.csv.gz'
 ForecastDataset.target = 'RSMKs_18_144_72'
 ForecastDataset.scale = True
 ForecastDataset.cross_learn = False
-ForecastDataset.time_features = 'h'
+ForecastDataset.time_features = []
+# ForecastDataset.time_features = 'h'
 ForecastDataset.normalise_time_features = True
 ForecastDataset.features = 'M2S'
 ForecastDataset.horizon_len = 46
