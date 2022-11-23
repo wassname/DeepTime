@@ -2,6 +2,7 @@ import os
 from os.path import join
 import math
 import logging
+import json
 from typing import Callable, Optional, Union, Dict, Tuple
 
 import gin
@@ -31,8 +32,11 @@ class ForecastExperiment(Experiment):
         val_set, val_loader = get_data(flag='val')
         test_set, test_loader = get_data(flag='test')
 
+        dim_size=train_set.data_x.shape[1]
+        seq_len = train_set[0][1].shape
         model = get_model(model_type,
-                          dim_size=train_set.data_x.shape[1],
+                          dim_size=dim_size,
+                          seq_len=seq_len,
                           datetime_feats=train_set.timestamps.shape[-1]).to(default_device())
         checkpoint = Checkpoint(self.root)
 
@@ -43,7 +47,8 @@ class ForecastExperiment(Experiment):
         val_metrics = validate(model, loader=val_loader, report_metrics=True)
         test_metrics = validate(model, loader=test_loader, report_metrics=True,
                                 save_path=self.root if save_vals else None)
-        np.save(join(self.root, 'metrics.npy'), {'val': val_metrics, 'test': test_metrics})
+        # np.save(join(self.root, 'metrics.npy'), {'val': val_metrics, 'test': test_metrics})
+        json.dump({'val': val_metrics, 'test': test_metrics}, open(join(self.root, 'metrics.npy', 'w')))
 
         val_metrics = {f'ValMetric/{k}': v for k, v in val_metrics.items()}
         test_metrics = {f'TestMetric/{k}': v for k, v in test_metrics.items()}

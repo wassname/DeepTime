@@ -20,28 +20,36 @@ from models.modules.encoders import LSTMEncoder, TransformerEncoder2, Transforme
 # from models.modules.regressors import RidgeRegressor
 
 @gin.configurable()
-def deeptime3(dim_size:int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float, base_learner: str, encoder:str, inr: str):
-    return DeepTIMe3(dim_size, datetime_feats, layer_size, inr_layers, n_fourier_feats, scales, dropout, base_learner, encoder, inr)
+def deeptime3(dim_size:int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float, base_learner: str, encoder:str, inr: str, seq_len: int):
+    return DeepTIMe3(dim_size, datetime_feats, layer_size, inr_layers, n_fourier_feats, scales, dropout, base_learner, encoder, inr, seq_len)
 
 
 class DeepTIMe3(nn.Module):
-    def __init__(self, dim_size: int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float=0.3, base_learner:str='Ridge', encoder:str='inception', inr:str='INR'):
+    def __init__(self, dim_size: int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float=0.3, base_learner:str='Ridge', encoder:str='inception', inr:str='INR', seq_len: int=46):
         super().__init__()
         
         # encode the past
+        encoded_size = layer_size
+        encoder_features = 24
+        encoder_layers = 3
         if encoder == 'inception':
-            encoded_size = layer_size
-            self.encoder = CausalInceptionTimePlus(
-                c_in=dim_size, c_out=encoded_size, 
-                # nf=24, depth=4,
-                nf=17, depth=3,    
-                bn=True,
-                dilation=2,
-                ks=[39, 19, 3],
-                coord=True, fc_dropout=dropout,
+            self.encoder = InceptionEncoder(
+                c_in=dim_size, c_out=encoded_size, dilation=6,
+                layer_size=17, layers=encoder_layers, dropout=dropout,
             )
         elif encoder == 'lstm':
-            self.encoder = LSTMEncoder()
+            self.encoder = LSTMEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=24)
+        elif encoder == 'lstm2':
+            self.encoder = LSTMEncoder2(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=32, seq_len=seq_len)
+        elif encoder == 'mlp':
+            self.encoder = MLPEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256)
+        elif encoder == 'transformer':
+            self.encoder = TransformerEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256, seq_len=seq_len)
+        elif encoder == 'transformer2':
+            self.encoder = TransformerEncoder2(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256, seq_len=seq_len)
+        elif encoder == 'none':
+            self.encoder = None
+            encoded_size = 0
         else:
             raise NotADirectoryError(encoder)
         
@@ -49,10 +57,10 @@ class DeepTIMe3(nn.Module):
         coord_size = 1
         in_feats=datetime_feats+encoded_size+coord_size
         if inr=='INRPlus2':
-            self.inr = INRPlus2(in_feats=in_feats, layers=inr_layers, layer_size=layer_size,
-                       n_fourier_feats=n_fourier_feats, scales=scales, dropout=dropout)
+            self.inr = INRPlus2(in_feats=in_feats, out_feats=layer_size, layers=inr_layers, layer_size=max(17, layer_size//8),
+                       n_fourier_feats=n_fourier_feats//4, scales=scales, dropout=dropout)
         elif inr=="INR":
-            self.inr = INR(in_feats=in_feats, layers=inr_layers, layer_size=layer_size,
+            self.inr = INR(in_feats=in_feats, out_feats=layer_size, layers=inr_layers, layer_size=layer_size,
                        n_fourier_feats=n_fourier_feats, scales=scales, dropout=dropout)
         else:
             raise NotImplementedError(inr)
@@ -75,15 +83,20 @@ class DeepTIMe3(nn.Module):
         
         # we summarize the past into a single hidden layer. Then repeat it for each coordinate
         past_len = time.shape[1]
-        encoded_x = self.encoder(past_x.transpose(2, 1))
-        encoded_x = repeat(encoded_x, "b f -> b t f", t=past_len)
+        if self.encoder is not None:
+            encoded_x = self.encoder(past_x)
+            encoded_x = repeat(encoded_x, "b f -> b t f", t=past_len)
+        
 
         # relative coordinates are the same for each batch, so we make them once and repeat them   
         coords = self.get_coords(past_len).to(time.device) + offset
         coords = repeat(coords, "1 t 1 -> b t 1", b=time.shape[0])
         
         # combine and run INR to decode the representation
-        context_input = torch.cat([encoded_x, coords, time], dim=-1)
+        if self.encoder is not None:
+            context_input = torch.cat([encoded_x, coords, time], dim=-1)
+        else:
+            context_input = torch.cat([coords, time], dim=-1)
         context_repr = self.inr(context_input)
         return context_repr
 

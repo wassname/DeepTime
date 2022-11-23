@@ -7,7 +7,7 @@ build.variables_dict = {
     # 'ForecastDataset.features': ['m', 'h', 'd'],
     'deeptime3.base_learner': ['Ridge', 'None', 'Transformer'],
     'deeptime3.inr': ['INR', 'INRPlus2'],
-    'deeptime3.encoder': ['inception', ],
+    'deeptime3.encoder': ['inception', 'lstm', 'mlp', 'lstm2', 'transformer', 'transformer2', 'none'],
     # 'deeptime3.dropout': [0.0, 0.1, 0.3, 0.5,],
 }
 
@@ -28,11 +28,11 @@ train.clip = 10.
 
 Checkpoint.patience = 7
 
-deeptime3.layer_size = 32
+deeptime3.layer_size = 256
 deeptime3.inr_layers = 5
-deeptime3.dropout = 0.3
+deeptime3.dropout = 0.1
 deeptime3.base_learner = 'Ridge'
-deeptime3.n_fourier_feats = 2048
+deeptime3.n_fourier_feats = 4096
 deeptime3.scales = [0.01, 0.1, 1, 5, 10, 20, 50, 100]
 
 ForecastDataset.data_path = 'stocks/OXY_2019.csv.gz'
@@ -44,4 +44,4 @@ ForecastDataset.time_features = []
 ForecastDataset.normalise_time_features = True
 ForecastDataset.features = 'M2S'
 ForecastDataset.horizon_len = 46
-ForecastDataset.lookback_mult = 2
+ForecastDataset.lookback_mult = 3

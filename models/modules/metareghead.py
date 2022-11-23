@@ -7,9 +7,16 @@ from models.modules.regressors import RidgeRegressor
 from models.modules.inr import INR, INRLayer
 
 class SumHead(nn.Module):
-    def __init__(self, d, c_out=1, ):
+    def __init__(self, d, c_out=1, dropout=0):
         super().__init__()
-        self.l = nn.Linear(d, c_out) # init a random transform
+        # self.conv = nn.Sequential(
+        #     CausalConv1d(head_nf, c_out, 1, bias=False, norm="Spectral"),
+        # )
+        self.l = nn.Sequential(
+            INRLayer(d, d, dropout=dropout),
+            # INRLayer(d, d, dropout=dropout),
+            nn.Linear(d, c_out)
+        ) # nn.Linear(d, c_out) # init a random transform
 
     def forward(self, query, support, support_labels):
         return self.l(query)
@@ -27,7 +34,7 @@ class TransformerHead(nn.Module):
             INRLayer(c_out, hidden_dim, dropout=0),
             nn.Linear(hidden_dim, hidden_dim)
         )
-        self.l = nn.MultiheadAttention(embed_dim=d, num_heads=num_heads, batch_first=True, kdim=d, vdim=hidden_dim, add_bias_kv=True, bias=True)
+        self.l = nn.MultiheadAttention(embed_dim=d, num_heads=num_heads, batch_first=True, kdim=d, vdim=hidden_dim, add_bias_kv=True, bias=True, dropout=0)
         # after using attention let's decode it
         self.decoder = nn.Sequential(
             INRLayer(d, d, dropout=dropout),
@@ -40,12 +47,12 @@ class TransformerHead(nn.Module):
         returns the classification score on the query set.
 
         Parameters:
-        query:  a (tasks_per_batch, n_query, d) Tensor.
-        support:  a (tasks_per_batch, n_support, d) Tensor.
-        support_labels: a (tasks_per_batch, n_support) Tensor.
-        n_way: a scalar. Represents the number of classes in a few-shot classification task.
-        n_shot: a scalar. Represents the number of support examples given per class.
-        lambda_reg: a scalar. Represents the strength of L2 regularization.
+            query:  a (tasks_per_batch, n_query, d) Tensor.
+            support:  a (tasks_per_batch, n_support, d) Tensor.
+            support_labels: a (tasks_per_batch, n_support) Tensor.
+            n_way: a scalar. Represents the number of classes in a few-shot classification task.
+            n_shot: a scalar. Represents the number of support examples given per class.
+            lambda_reg: a scalar. Represents the strength of L2 regularization.
         Returns: a (tasks_per_batch, n_query, n_way) Tensor.
         """
         # should be (batch, seq, feature)
@@ -62,7 +69,7 @@ class RegressionHead(nn.Module):
             # the regular DeepTime one
             self.head = RidgeRegressor()
         elif ("None" in base_learner):
-            self.head = SumHead(d=d)
+            self.head = SumHead(d=d, dropout=dropout)
         elif ("Transformer" in base_learner):
             self.head = TransformerHead(d=d, dropout=dropout, num_heads=num_heads)
         else:

@@ -44,10 +44,10 @@ class LinBnDropSN(nn.Sequential):
 
 
 class InceptionEncoder(nn.Module):
-    def __init__(self, c_in, c_out, *args, **kwargs):
+    def __init__(self, c_in, c_out, dropout, layers, layer_size, *args, **kwargs):
         super().__init__()
         self.net = CausalInceptionTimePlus(
-            c_in=c_in, c_out=c_out, custom_head=custom_head, *args, **kwargs
+            c_in=c_in, c_out=c_out, ks=[39, 19, 3], custom_head=custom_head, coord=True, fc_dropout=dropout, bn=True, depth=layers, nf=layer_size, *args, **kwargs
         )
         bn = kwargs.get("bn", True)
         fc_dropout = kwargs.get("fc_dropout", 0.15)
@@ -59,7 +59,7 @@ class InceptionEncoder(nn.Module):
         )
         self.head = nn.Sequential(
             # just to make sure we get a spectral norm final layer (after cat)
-            LinBnDropSN(c_out*2, c_out*2, bn=bn, p=fc_dropout),
+            LinBnDropSN(c_out*2, c_out, bn=bn, p=fc_dropout),
         )
 
     def forward(self, x):
@@ -258,15 +258,17 @@ class MLPEncoder(nn.Module):
         super().__init__()
         self.net = INR(
             in_feats=c_in,
+            out_feats=layer_size,
             scales=scales,
             n_fourier_feats=n_fourier_feats,
             layers=layers,
             layer_size=layer_size,
         )
+        self.head = nn.Linear(layer_size, c_out)
 
     def forward(self, x):
         """
         Takes in a sequence of shape (batch, sequence, features)
         and outputs a representation of shape (batch, features)
         """
-        return self.net(x)[:, -1]
+        return self.head(self.net(x)[:, -1])
