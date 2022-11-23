@@ -133,14 +133,14 @@ class TransformerEncoder2(nn.Module):
         super().__init__()
         # d_model (82) must be divisible by n_heads (4)
         layer_size = layer_size // n_heads * n_heads
-        d_model = layer_size // 2 
+        d_model = layer_size // 4 
         self.net = TSPerceiver(
             c_in=c_in,
             c_out=c_out,
             seq_len=seq_len,
             
             # cat_szs=0, n_cont=0, 
-            n_latents=layer_size, d_latent=layer_size//4, 
+            n_latents=layer_size, d_latent=d_model, 
             # d_context=None, 
             self_per_cross_attn=1,
                 #  share_weights=True, cross_n_heads=1, d_head=None, 
@@ -229,7 +229,7 @@ class LSTMEncoder2(nn.Module):
             depth=layers,
             lstm_dropout=conv_dropout,
             fc_dropout=dropout,
-            pre_norm=False, use_token=True, use_pe=True, 
+            pre_norm=False, use_token=False, use_pe=False, 
             use_bn=False, 
         )
 

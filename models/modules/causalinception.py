@@ -126,7 +126,8 @@ class CausalInceptionTimePlus(nn.Sequential):
         dilations = np.array([max(1, d*dilation) for d in range(depth)])
         d=np.array([dilations**i for i in range(3)]).T
         rf = ((ks-1)*d).sum(0)
-        print(f"receptive field {rf}={ks-1}*{d}")
+        # print(f"receptive field {rf}={ks-1}*{d}")
+        print(f"receptive field {rf}")
 
     def create_head(self, nf, c_out, seq_len, flatten=False, concat_pool=False, fc_dropout=0., bn=False, y_range=None):
         if flatten:

@@ -100,14 +100,19 @@ class ForecastDataset(Dataset):
             data = df_data.values
 
         # is will be our past data, including the y col
-        self.data_x = data[border1:border2] 
+        self.data_x = data[border1:border2]
+        
+        self.dates = df_raw['date'][border1:border2]
         # y is just the col we predict
         self.data_y = data[border1:border2][:, [-1]]
-        self.timestamps = get_time_features(pd.to_datetime(df_raw.date[border1:border2].values),
+        self.timestamps = get_time_features(pd.to_datetime(self.dates.values),
                                             normalise=self.normalise_time_features,
                                             features=self.time_features)
         self.n_time = len(self.data_x)
         self.n_time_samples = self.n_time - self.lookback_len * 2 - self.horizon_len + 1 + self.gap
+        
+        o = self.horizon_len + self.lookback_len
+        self.index = self.dates.iloc[o:].iloc[:self.n_time_samples]
 
     def get_borders(self, df_raw: pd.DataFrame) -> Tuple[List[int], List[int], List[int], List[int]]:
         set_type = {'train': 0, 'val': 1, 'test': 2}[self.flag]
@@ -133,6 +138,9 @@ class ForecastDataset(Dataset):
         return self.n_time_samples
     
     def get_inds(self, idx):
+        
+        
+        
         cx_start = idx
         cx_end = cx_start + self.lookback_len
         c_start = cx_end + self.gap
@@ -143,6 +151,20 @@ class ForecastDataset(Dataset):
         
         qx_end = q_start
         qx_start = qx_end - self.lookback_len
+        
+        ####
+        
+        # q_start = idx
+        # q_end = q_start + self.horizon_len
+        
+        # qx_end = q_start
+        # qx_start = qx_end - self.lookback_len
+        
+        # c_end = q_start - self.gap
+        # c_start = c_end - self.horizon_len
+        
+        # cx_end = c_start - self.gap
+        # cx_start = cx_end - self.lookback_len
         
         return cx_start, cx_end, c_start, c_end, qx_start, qx_end, q_start, q_end
 

@@ -5,9 +5,9 @@ build.variables_dict = {
     # 'ForecastDataset.lookback_mult': [1, 3, 5, 7, 9],
     # 'ForecastDataset.horizon_len': [6, 12, 24, 48, 96, 192, 336, 720],
     # 'ForecastDataset.features': ['m', 'h', 'd'],
-    'deeptime3.base_learner': ['Ridge', 'None', 'Transformer'],
+    'deeptime3.lrn': ['Ridge', 'None', 'Transformer'],
     'deeptime3.inr': ['INR', 'INRPlus2'],
-    'deeptime3.encoder': ['inception', 'lstm', 'mlp', 'lstm2', 'transformer', 'transformer2', 'none'],
+    'deeptime3.enc': ['inception', 'lstm', 'mlp', 'lstm2', 'transformer', 'transformer2', 'none'],
     # 'deeptime3.dropout': [0.0, 0.1, 0.3, 0.5,],
 }
 
@@ -31,7 +31,7 @@ Checkpoint.patience = 7
 deeptime3.layer_size = 256
 deeptime3.inr_layers = 5
 deeptime3.dropout = 0.1
-deeptime3.base_learner = 'Ridge'
+deeptime3.lrn = 'Ridge'
 deeptime3.n_fourier_feats = 4096
 deeptime3.scales = [0.01, 0.1, 1, 5, 10, 20, 50, 100]
 

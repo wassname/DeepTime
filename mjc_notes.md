@@ -71,8 +71,8 @@ TODO:
 
 - [x] M2S mode
 - [ ] add other INR's
-- [ ] add None as learner
-- [ ] no encoder?
+- [ ] add None as lrn
+- [ ] no enc?
 
 ```
 python -m experiments.forecast --config_path=experiments/configs/hp_search/Stocks.gin build_experiment

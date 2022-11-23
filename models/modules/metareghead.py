@@ -63,17 +63,17 @@ class TransformerHead(nn.Module):
 
 
 class RegressionHead(nn.Module):
-    def __init__(self, base_learner='Ridge', d=512, enable_scale=True, dropout=0.1, num_heads=16):
+    def __init__(self, lrn='Ridge', d=512, enable_scale=True, dropout=0.1, num_heads=16):
         super().__init__()
-        if ('Ridge' in base_learner):
+        if ('Ridge' in lrn):
             # the regular DeepTime one
             self.head = RidgeRegressor()
-        elif ("None" in base_learner):
+        elif ("None" in lrn):
             self.head = SumHead(d=d, dropout=dropout)
-        elif ("Transformer" in base_learner):
+        elif ("Transformer" in lrn):
             self.head = TransformerHead(d=d, dropout=dropout, num_heads=num_heads)
         else:
-            raise NotImplementedError(base_learner)
+            raise NotImplementedError(lrn)
         
         # Add a learnable scale
         self.enable_scale = enable_scale

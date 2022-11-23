@@ -20,38 +20,38 @@ from models.modules.encoders import LSTMEncoder, TransformerEncoder2, Transforme
 # from models.modules.regressors import RidgeRegressor
 
 @gin.configurable()
-def deeptime3(dim_size:int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float, base_learner: str, encoder:str, inr: str, seq_len: int):
-    return DeepTIMe3(dim_size, datetime_feats, layer_size, inr_layers, n_fourier_feats, scales, dropout, base_learner, encoder, inr, seq_len)
+def deeptime3(dim_size:int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float, lrn: str, enc:str, inr: str, seq_len: int):
+    return DeepTIMe3(dim_size, datetime_feats, layer_size, inr_layers, n_fourier_feats, scales, dropout, lrn, enc, inr, seq_len)
 
 
 class DeepTIMe3(nn.Module):
-    def __init__(self, dim_size: int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float=0.3, base_learner:str='Ridge', encoder:str='inception', inr:str='INR', seq_len: int=46):
+    def __init__(self, dim_size: int, datetime_feats: int, layer_size: int, inr_layers: int, n_fourier_feats: int, scales: float, dropout: float=0.3, lrn:str='Ridge', enc:str='inception', inr:str='INR', seq_len: int=46):
         super().__init__()
         
         # encode the past
         encoded_size = layer_size
         encoder_features = 24
         encoder_layers = 3
-        if encoder == 'inception':
-            self.encoder = InceptionEncoder(
+        if enc == 'inception':
+            self.enc = InceptionEncoder(
                 c_in=dim_size, c_out=encoded_size, dilation=6,
                 layer_size=17, layers=encoder_layers, dropout=dropout,
             )
-        elif encoder == 'lstm':
-            self.encoder = LSTMEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=24)
-        elif encoder == 'lstm2':
-            self.encoder = LSTMEncoder2(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=32, seq_len=seq_len)
-        elif encoder == 'mlp':
-            self.encoder = MLPEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256)
-        elif encoder == 'transformer':
-            self.encoder = TransformerEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256, seq_len=seq_len)
-        elif encoder == 'transformer2':
-            self.encoder = TransformerEncoder2(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256, seq_len=seq_len)
-        elif encoder == 'none':
-            self.encoder = None
+        elif enc == 'lstm':
+            self.enc = LSTMEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=24)
+        elif enc == 'lstm2':
+            self.enc = LSTMEncoder2(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=32, seq_len=seq_len)
+        elif enc == 'mlp':
+            self.enc = MLPEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256)
+        elif enc == 'transformer':
+            self.enc = TransformerEncoder(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=256, seq_len=seq_len)
+        elif enc == 'transformer2':
+            self.enc = TransformerEncoder2(c_in=dim_size, c_out=encoded_size, dropout=dropout, layers=encoder_layers, layer_size=128, seq_len=seq_len)
+        elif enc == 'none':
+            self.enc = None
             encoded_size = 0
         else:
-            raise NotADirectoryError(encoder)
+            raise NotADirectoryError(enc)
         
         # translate coords to a representation, given a summary of the past
         coord_size = 1
@@ -66,7 +66,7 @@ class DeepTIMe3(nn.Module):
             raise NotImplementedError(inr)
         
         # meta learn y given a representation
-        self.regressionhead = RegressionHead(base_learner=base_learner, d=layer_size, dropout=dropout)
+        self.regressionhead = RegressionHead(lrn=lrn, d=layer_size, dropout=dropout)
 
         self.datetime_feats = datetime_feats
         self.inr_layers = inr_layers
@@ -83,8 +83,8 @@ class DeepTIMe3(nn.Module):
         
         # we summarize the past into a single hidden layer. Then repeat it for each coordinate
         past_len = time.shape[1]
-        if self.encoder is not None:
-            encoded_x = self.encoder(past_x)
+        if self.enc is not None:
+            encoded_x = self.enc(past_x)
             encoded_x = repeat(encoded_x, "b f -> b t f", t=past_len)
         
 
@@ -93,7 +93,7 @@ class DeepTIMe3(nn.Module):
         coords = repeat(coords, "1 t 1 -> b t 1", b=time.shape[0])
         
         # combine and run INR to decode the representation
-        if self.encoder is not None:
+        if self.enc is not None:
             context_input = torch.cat([encoded_x, coords, time], dim=-1)
         else:
             context_input = torch.cat([coords, time], dim=-1)

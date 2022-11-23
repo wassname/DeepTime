@@ -34,7 +34,7 @@ class ForecastExperiment(Experiment):
         test_set, test_loader = get_data(flag='test')
 
         dim_size=train_set.data_x.shape[1]
-        seq_len = train_set[0][1].shape[0]
+        seq_len = train_set[0][0].shape[0]
         model = get_model(model_type,
                           dim_size=dim_size,
                           seq_len=seq_len,
@@ -51,7 +51,7 @@ class ForecastExperiment(Experiment):
         metrics = {'val': val_metrics, 'test': test_metrics}
         # np.save(join(self.root, 'metrics.npy'), {'val': val_metrics, 'test': test_metrics})
         metrics = serialize(metrics)
-        json.dump(metrics, open(join(self.root, 'metrics.npy'), 'w'))
+        json.dump(metrics, open(join(self.root, 'metrics.json'), 'w'))
 
         val_metrics = {f'ValMetric/{k}': v for k, v in val_metrics.items()}
         test_metrics = {f'TestMetric/{k}': v for k, v in test_metrics.items()}

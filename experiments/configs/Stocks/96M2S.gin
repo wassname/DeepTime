@@ -24,7 +24,7 @@ Checkpoint.patience = 7
 deeptime3.layer_size = 32
 deeptime3.inr_layers = 5
 deeptime3.dropout = 0.3
-deeptime3.base_learner = 'Ridge'
+deeptime3.lrn = 'Ridge'
 deeptime3.n_fourier_feats = 2048
 deeptime3.scales = [0.01, 0.1, 1, 5, 10, 20, 50, 100]
 
