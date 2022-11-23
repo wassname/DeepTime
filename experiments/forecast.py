@@ -20,6 +20,7 @@ from utils.checkpoint import Checkpoint
 from utils.ops import default_device, to_tensor
 from utils.losses import get_loss_fn
 from utils.metrics import calc_metrics
+from utils.serialize import serialize
 
 
 class ForecastExperiment(Experiment):
@@ -33,7 +34,7 @@ class ForecastExperiment(Experiment):
         test_set, test_loader = get_data(flag='test')
 
         dim_size=train_set.data_x.shape[1]
-        seq_len = train_set[0][1].shape
+        seq_len = train_set[0][1].shape[0]
         model = get_model(model_type,
                           dim_size=dim_size,
                           seq_len=seq_len,
@@ -47,8 +48,10 @@ class ForecastExperiment(Experiment):
         val_metrics = validate(model, loader=val_loader, report_metrics=True)
         test_metrics = validate(model, loader=test_loader, report_metrics=True,
                                 save_path=self.root if save_vals else None)
+        metrics = {'val': val_metrics, 'test': test_metrics}
         # np.save(join(self.root, 'metrics.npy'), {'val': val_metrics, 'test': test_metrics})
-        json.dump({'val': val_metrics, 'test': test_metrics}, open(join(self.root, 'metrics.npy', 'w')))
+        metrics = serialize(metrics)
+        json.dump(metrics, open(join(self.root, 'metrics.npy'), 'w'))
 
         val_metrics = {f'ValMetric/{k}': v for k, v in val_metrics.items()}
         test_metrics = {f'TestMetric/{k}': v for k, v in test_metrics.items()}
